@@ -130,11 +130,11 @@ class TrapezoidalPulse:
             Default is [0, 1].
 
         padding_factor : float, optional
-            Amount of padding before/after outputted pulse waveform in
-            terms of multiples of width.
+            Amount of padding before/after outputted pulse waveform 
+            measured in of multiples of `width`.
 
             Total output waveform length is 
-                width + ( len(width) * padding_factor )
+                len(width) + ( len(width) * padding_factor )
 
             Default is 1. When output waveforms are concatenated, this
             creates a 50% duty cycle signal, despite having asymmetric rise
@@ -352,7 +352,10 @@ class TrapezoidalPulse:
             
             def apply_filter(self, b, a):
                 """Apply the filter with provided coefficients"""
-                self.waveform_filtered = signal.filtfilt(b, a, self.waveform)
+                try:
+                    self.waveform_filtered = signal.filtfilt(b, a, self.waveform)
+                except ValueError:
+                    raise Exception("Waveform vector too short to filter. Consider increasing waveform length or sample rate.")
                 
                 
             # no filter
@@ -362,7 +365,10 @@ class TrapezoidalPulse:
             
             # filter="auto"
             elif self._filter == "auto":
-                fc = 0.35 * 1/min(self._risetime, self._falltime)
+                try:
+                    fc = 0.35 * 1/min(self._risetime, self._falltime)
+                except:
+                    fc = 0.35 * self._fs_internal
                 apply_filter(self, *design_filter(self, normalized_freq=fc/self._fs_internal))
                 
             # filter=cutoff frequency in Hz
