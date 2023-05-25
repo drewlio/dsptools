@@ -114,6 +114,10 @@ def plot_spectrum(freqs,
     xdivs : integer
         Number of divisions of the x-axis, default = 10
 
+    clear : boolean
+        Clears current Pyplot axes before redrawing. This is useful when 
+        using ipywidgets 'interact' to update a plot.
+
     *args : optional Matplotlib arguments
 
     **kwargs : optional Matplotlib keyword arguments
@@ -147,7 +151,11 @@ def plot_spectrum(freqs,
     else:
         xdivs = None
 
-
+    if 'clear' in kwargs.keys():
+        plt.gca().clear()
+        kwargs.pop('clear')
+        
+ 
     # Apply the plot style
     plt.style.use(style)
 
@@ -320,7 +328,8 @@ def plot_timeseries(amplitudes,
     amplitudes in linear units.
 
     Uses the current axis of the current Matplotlib.Pyplot figure. 
-    Axes are not cleared to allow multiple traces on the same axis.
+    Axes are not cleared to allow multiple traces on the same axis unless
+    'clear' is True.
 
 
     Parameters
@@ -338,6 +347,10 @@ def plot_timeseries(amplitudes,
 
     xdivs : integer
         Number of divisions of the x-axis, default = 10
+        
+    clear : boolean
+        Clears current Pyplot axes before redrawing. This is useful when 
+        using ipywidgets 'interact' to update a plot.
 
     *args : optional Matplotlib arguments
 
@@ -366,7 +379,11 @@ def plot_timeseries(amplitudes,
     else:
         xdivs = None
 
+    if 'clear' in kwargs.keys():
+        plt.gca().clear()
+        kwargs.pop('clear')
 
+        
     # Apply the plot style
     plt.style.use(style)
 

@@ -74,6 +74,7 @@ class TrapezoidalPulse:
             normalized_frequency : normalized cutoff frequency (Hz)
             frequency : unnormalized cutoff frequency (Hz)
             coefficients : (b, a)
+            
         }
 
 
@@ -92,7 +93,10 @@ class TrapezoidalPulse:
         percent_width_reference_level=50,
         state_levels=[0,1],
         padding_factor=2,
-        filter=None):
+        filter=None,
+        cutoff=None,
+        timeunit=1,
+        frequnit=1):
         """
         Parameters
         ----------
@@ -170,21 +174,56 @@ class TrapezoidalPulse:
                 (b, a)
                     Tuple containing pre-designed digital filter 
                     coefficients.
+                    
+                "cutoff"
+                    The text string 'cutoff' indicates the parameter 'cutoff'
+                    should be used for the cutoff frequency float value.
+                    
+                    
+        cutoff : float, required for filter=cutoff
+            Specifies the filter cutoff frequency if the parameter 'filter'
+            is set to the value 'cutoff'. This pattern is to streamline use
+            of ipywidgets 'interact'. 
+                        
+                float
+                    Cutoff frequency in Hertz
+                    
+        timeunit : float, optional
+            Specifies a multiplier that should be applied to the time values
+            such as 'width', 'risetime', 'falltime'. For example, the value
+            of 1e-9 indicates that 'width', 'risetime', and 'falltime' values
+            are in the units of nanoseconds.
+            
+                float
+                    Multiplier of time units
+                    
+        frequnit : float, optional
+            Specifies a multiplier that should be applied to the frequency
+            values such as 'filter' (when float), 'cutoff'. For example,
+            the value of 1e6 indicates that 'filter', 'cutoff' values
+            are in the units of megahertz. 
+            Note 'fs' is uneffected by 'frequnit'.
+            
+                float
+                    Multiplier of frequency units
             
         """
+        self._timeunit = timeunit
+        self._frequnit = frequnit
         self.fs = fs
-        self._width = width
-        self._risetime = risetime
-        self._falltime = falltime
+        self._width = width * self._timeunit
+        self._risetime = risetime * self._timeunit
+        self._falltime = falltime * self._timeunit
         self._percent_reference_levels = percent_reference_levels
         self._percent_width_reference_level = percent_width_reference_level
         self._state_levels = state_levels
         self._padding_factor=padding_factor
         self._filter = filter
+        self._cutoff = cutoff if cutoff is None else cutoff * self._frequnit
 
         # generate a fs multiple, then downsample before returning from the
         # class. Not currently used
-        self._fs_internal = fs * 1 
+        self._fs_internal = self.fs
         
         self._compute()
 
@@ -371,15 +410,21 @@ class TrapezoidalPulse:
                     fc = 0.35 * self._fs_internal
                 apply_filter(self, *design_filter(self, normalized_freq=fc/self._fs_internal))
                 
+            # filter cutoff frequency in Hz given in 'cutoff' parameter
+            elif self._filter == 'cutoff':
+                if isinstance(self._cutoff, float):
+                    apply_filter(self, *design_filter(self, normalized_freq=self._cutoff/self._fs_internal))
+                
             # filter=cutoff frequency in Hz
             elif isinstance(self._filter, float):
+                self._filter *= self._frequnit
                 apply_filter(self, *design_filter(self, normalized_freq=self._filter/self._fs_internal))
                 
             # filter=(b, a)
             elif isinstance(self._filter, (tuple, list)):
                 apply_filter(self, *self._filter)
                 self.filter = {
-                    "coefficients": (b, a)
+                    "coefficients": (self._filter[0], self._filter[1])
                 }
                 
             else:
